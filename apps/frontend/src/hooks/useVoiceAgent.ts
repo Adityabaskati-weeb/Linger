@@ -8,20 +8,27 @@ interface SpeechRecognitionLike extends EventTarget {
   continuous: boolean;
   start: () => void;
   stop: () => void;
+  abort?: () => void;
   onresult: ((event: SpeechRecognitionEventLike) => void) | null;
   onend: (() => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((event?: { error?: string }) => void) | null;
+  onspeechend?: (() => void) | null;
 }
 
 interface SpeechRecognitionEventLike {
-  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+  results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal?: boolean }>;
 }
 
 export function useVoiceAgent() {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const transcriptRef = useRef("");
+  const submittedTranscriptRef = useRef("");
   const [transcript, setTranscript] = useState("");
+  const [finalTranscript, setFinalTranscript] = useState("");
+  const [finalTranscriptId, setFinalTranscriptId] = useState(0);
   const [agentState, setAgentState] = useState<AgentState>("idle");
   const [voiceSupported, setVoiceSupported] = useState(false);
+  const [voiceError, setVoiceError] = useState("");
 
   useEffect(() => {
     const recognitionConstructor =
@@ -30,6 +37,7 @@ export function useVoiceAgent() {
         .webkitSpeechRecognition;
 
     if (!recognitionConstructor) {
+      setVoiceError("Voice input is not supported in this browser. Use Chrome or Edge, or type your question.");
       return;
     }
 
@@ -41,23 +49,61 @@ export function useVoiceAgent() {
       const nextTranscript = Array.from(event.results)
         .map((result) => result[0]?.transcript ?? "")
         .join(" ");
+      transcriptRef.current = nextTranscript;
       setTranscript(nextTranscript);
     };
-    recognition.onend = () => setAgentState((current) => (current === "listening" ? "idle" : current));
-    recognition.onerror = () => setAgentState("idle");
+    recognition.onspeechend = () => {
+      recognition.stop();
+    };
+    recognition.onend = () => {
+      const finalTranscript = transcriptRef.current.trim();
+
+      if (finalTranscript && finalTranscript !== submittedTranscriptRef.current) {
+        submittedTranscriptRef.current = finalTranscript;
+        setFinalTranscript(finalTranscript);
+        setFinalTranscriptId((current) => current + 1);
+      } else if (!finalTranscript) {
+        setAgentState("idle");
+      }
+    };
+    recognition.onerror = (event) => {
+      const reason = event?.error === "not-allowed" ? "Microphone permission was blocked." : "Voice input stopped.";
+      setVoiceError(`${reason} You can still type the question below.`);
+      setAgentState("idle");
+    };
     recognitionRef.current = recognition;
     setVoiceSupported(true);
   }, []);
 
   function startListening() {
+    if (!recognitionRef.current) {
+      setVoiceError("Voice input is not available in this browser. Type your question instead.");
+      return;
+    }
+
+    speechSynthesis.cancel();
     setTranscript("");
+    setFinalTranscript("");
+    transcriptRef.current = "";
+    submittedTranscriptRef.current = "";
+    setVoiceError("");
     setAgentState("listening");
-    recognitionRef.current?.start();
+
+    try {
+      recognitionRef.current.start();
+    } catch {
+      setVoiceError("Voice input is already active. Stop it and try again.");
+    }
   }
 
   function stopListening() {
-    recognitionRef.current?.stop();
+    if (!recognitionRef.current) {
+      setAgentState("idle");
+      return;
+    }
+
     setAgentState("processing");
+    recognitionRef.current.stop();
   }
 
   function speak(text: string) {
@@ -80,14 +126,23 @@ export function useVoiceAgent() {
     speechSynthesis.speak(utterance);
   }
 
+  function stopSpeaking() {
+    speechSynthesis.cancel();
+    setAgentState("idle");
+  }
+
   return {
     transcript,
+    finalTranscript,
+    finalTranscriptId,
     setTranscript,
     agentState,
     setAgentState,
     voiceSupported,
+    voiceError,
     startListening,
     stopListening,
-    speak
+    speak,
+    stopSpeaking
   };
 }

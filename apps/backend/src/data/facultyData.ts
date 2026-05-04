@@ -244,6 +244,17 @@ export function getMaterials() {
   return materials;
 }
 
+export function deleteMaterial(id: string) {
+  const exists = materials.some((material) => material.id === id);
+
+  if (!exists) {
+    return false;
+  }
+
+  materials = materials.filter((material) => material.id !== id);
+  return true;
+}
+
 export function createMaterial(input: {
   subjectId: string;
   title: string;

@@ -7,6 +7,7 @@ import { StudentLayout } from "./layouts/StudentLayout";
 import { Login } from "./pages/auth/Login";
 import { AdminAttendanceAnalytics } from "./pages/admin/AttendanceAnalytics";
 import { AdminDashboard } from "./pages/admin/Dashboard";
+import { AdminDepartments } from "./pages/admin/Departments";
 import { AdminFacultyManagement } from "./pages/admin/FacultyManagement";
 import { AdminStudents } from "./pages/admin/Students";
 import { AdminTimetable } from "./pages/admin/Timetable";
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="faculty" element={<AdminFacultyManagement />} />
           <Route path="students" element={<AdminStudents />} />
           <Route path="timetable" element={<AdminTimetable />} />
+          <Route path="departments" element={<AdminDepartments />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />

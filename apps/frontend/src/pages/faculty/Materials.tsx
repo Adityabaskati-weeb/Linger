@@ -41,6 +41,11 @@ export function FacultyMaterials() {
     loadMaterials();
   }
 
+  async function deleteUpload(id: string) {
+    await api.delete(`/faculty/materials/${id}`);
+    loadMaterials();
+  }
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
@@ -99,6 +104,9 @@ export function FacultyMaterials() {
                 {material.subject} - {material.fileName} - {Math.round(material.fileSize / 1024)} KB
               </p>
               <p className="mt-3 text-sm leading-6 text-slate-400">{material.contentPreview}</p>
+              <Button className="mt-3" size="sm" variant="danger" onClick={() => void deleteUpload(material.id)}>
+                Delete
+              </Button>
             </div>
           ))}
         </div>

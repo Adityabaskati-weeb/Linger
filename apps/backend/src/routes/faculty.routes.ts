@@ -1,5 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
+import mammoth from "mammoth";
 import pdfParse from "pdf-parse";
 import { z } from "zod";
 import {
@@ -7,6 +8,7 @@ import {
   createAttendanceSession,
   createLeaveRequest,
   createMaterial,
+  deleteMaterial,
   getAttendanceSessions,
   getFacultyDashboard,
   getFacultyRoster,
@@ -69,6 +71,12 @@ facultyRouter.delete("/leave/:id", (req, res) => {
 });
 
 facultyRouter.get("/materials", (_req, res) => ok(res, getMaterials()));
+facultyRouter.delete("/materials/:id", (req, res) => {
+  const deleted = deleteMaterial(req.params.id);
+  return deleted
+    ? ok(res, { deleted: true })
+    : res.status(404).json({ success: false, error: "Material not found" });
+});
 facultyRouter.post(
   "/materials/upload",
   upload.single("file"),
@@ -103,9 +111,17 @@ async function extractText(file: Express.Multer.File) {
     return parsed.text;
   }
 
+  if (
+    file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    file.originalname.toLowerCase().endsWith(".docx")
+  ) {
+    const parsed = await mammoth.extractRawText({ buffer: file.buffer });
+    return parsed.value;
+  }
+
   if (file.mimetype.startsWith("text/") || file.originalname.toLowerCase().endsWith(".txt")) {
     return file.buffer.toString("utf8");
   }
 
-  return `Uploaded ${file.originalname}. Text extraction for this file type will be expanded in the database-backed materials phase.`;
+  throw new Error("Only PDF, DOCX, and TXT materials are supported");
 }

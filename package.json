@@ -11,6 +11,7 @@
     "dev": "concurrently -n backend,frontend -c cyan,magenta \"npm run dev -w @campusiq/backend\" \"npm run dev -w @campusiq/frontend\"",
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces --if-present",
+    "test:smoke": "node scripts/smoke-test.mjs",
     "lint": "npm run lint --workspaces --if-present",
     "format": "prettier --write ."
   },

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import {
   BookOpen,
+  Building2,
   CalendarDays,
   GraduationCap,
   LayoutDashboard,
@@ -51,7 +52,8 @@ const roleMeta: Record<Role, { title: string; subtitle: string; nav: NavItem[] }
       { label: "Attendance", href: "/admin/attendance", icon: <ShieldCheck className="h-4 w-4" /> },
       { label: "Faculty", href: "/admin/faculty", icon: <Users className="h-4 w-4" /> },
       { label: "Students", href: "/admin/students", icon: <GraduationCap className="h-4 w-4" /> },
-      { label: "Timetable", href: "/admin/timetable", icon: <CalendarDays className="h-4 w-4" /> }
+      { label: "Timetable", href: "/admin/timetable", icon: <CalendarDays className="h-4 w-4" /> },
+      { label: "Departments", href: "/admin/departments", icon: <Building2 className="h-4 w-4" /> }
     ]
   }
 };

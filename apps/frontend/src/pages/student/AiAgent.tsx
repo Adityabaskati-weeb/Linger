@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { AiMessage, AiMode, AiSubject } from "@campusiq/shared";
 import { Mic, Send, Square } from "lucide-react";
@@ -21,8 +21,104 @@ export function StudentAiAgent() {
   const [mode, setMode] = useState<AiMode>("text");
   const [streaming, setStreaming] = useState(false);
   const accessToken = useAuthStore((state) => state.accessToken);
-  const { transcript, agentState, setAgentState, voiceSupported, startListening, stopListening, speak } =
-    useVoiceAgent();
+  const processedVoiceIdRef = useRef(0);
+  const {
+    transcript,
+    finalTranscript,
+    finalTranscriptId,
+    agentState,
+    setAgentState,
+    voiceSupported,
+    voiceError,
+    startListening,
+    stopListening,
+    speak
+  } = useVoiceAgent();
+
+  const sendMessage = useCallback(
+    async (prompt = input, nextMode = mode) => {
+      const trimmed = prompt.trim();
+      if (!trimmed || !subjectId || !accessToken || streaming) return;
+
+      const userMessage: AiMessage = { role: "user", content: trimmed };
+      const nextMessages = [...messages, userMessage];
+      setMessages([...nextMessages, { role: "assistant", content: "" }]);
+      setInput("");
+      setMode(nextMode);
+      setStreaming(true);
+      setAgentState("processing");
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:4000/api"}/ai/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({
+            subjectId,
+            mode: nextMode,
+            messages: nextMessages
+          })
+        });
+
+        if (!response.ok || !response.body) {
+          throw new Error("AI stream failed");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let assistantText = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const events = buffer.split("\n\n");
+          buffer = events.pop() ?? "";
+
+          for (const event of events) {
+            const data = event.replace("data: ", "").trim();
+            if (!data) continue;
+            if (data === "[DONE]") {
+              setStreaming(false);
+              setMessages((current) =>
+                current.map((message, index) =>
+                  index === current.length - 1 ? { role: "assistant", content: assistantText } : message
+                )
+              );
+              speak(assistantText);
+              return;
+            }
+
+            const token = JSON.parse(data).token as string;
+            assistantText += token;
+            setMessages((current) =>
+              current.map((message, index) =>
+                index === current.length - 1 ? { role: "assistant", content: assistantText } : message
+              )
+            );
+          }
+        }
+
+        setStreaming(false);
+        setAgentState("idle");
+      } catch {
+        setStreaming(false);
+        setAgentState("idle");
+        setMessages((current) =>
+          current.map((message, index) =>
+            index === current.length - 1
+              ? { role: "assistant", content: "I could not reach the tutor service. Please try again." }
+              : message
+          )
+        );
+      }
+    },
+    [accessToken, input, messages, mode, setAgentState, speak, subjectId, streaming]
+  );
 
   useEffect(() => {
     api.get<{ success: true; data: AiSubject[] }>("/ai/subjects").then((response) => {
@@ -37,82 +133,20 @@ export function StudentAiAgent() {
     }
   }, [transcript]);
 
+  useEffect(() => {
+    if (!finalTranscript || finalTranscriptId === processedVoiceIdRef.current) {
+      return;
+    }
+
+    processedVoiceIdRef.current = finalTranscriptId;
+    setInput(finalTranscript);
+    void sendMessage(finalTranscript, "text");
+  }, [finalTranscript, finalTranscriptId, sendMessage]);
+
   const selectedSubject = useMemo(
     () => subjects.find((subject) => subject.subjectId === subjectId),
     [subjectId, subjects]
   );
-
-  async function sendMessage(prompt = input, nextMode = mode) {
-    const trimmed = prompt.trim();
-    if (!trimmed || !subjectId || !accessToken) return;
-
-    const userMessage: AiMessage = { role: "user", content: trimmed };
-    const nextMessages = [...messages, userMessage];
-    setMessages([...nextMessages, { role: "assistant", content: "" }]);
-    setInput("");
-    setMode(nextMode);
-    setStreaming(true);
-    setAgentState("processing");
-
-    const response = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:4000/api"}/ai/chat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`
-      },
-      body: JSON.stringify({
-        subjectId,
-        mode: nextMode,
-        messages: nextMessages
-      })
-    });
-
-    if (!response.body) {
-      setStreaming(false);
-      setAgentState("idle");
-      return;
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let assistantText = "";
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const events = buffer.split("\n\n");
-      buffer = events.pop() ?? "";
-
-      for (const event of events) {
-        const data = event.replace("data: ", "").trim();
-        if (!data) continue;
-        if (data === "[DONE]") {
-          setStreaming(false);
-          setMessages((current) =>
-            current.map((message, index) =>
-              index === current.length - 1 ? { role: "assistant", content: assistantText } : message
-            )
-          );
-          speak(assistantText);
-          return;
-        }
-
-        const token = JSON.parse(data).token as string;
-        assistantText += token;
-        setMessages((current) =>
-          current.map((message, index) =>
-            index === current.length - 1 ? { role: "assistant", content: assistantText } : message
-          )
-        );
-      }
-    }
-
-    setStreaming(false);
-    setAgentState("idle");
-  }
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -179,14 +213,24 @@ export function StudentAiAgent() {
             <AiOrb state={agentState} />
           </div>
           <VoiceWaveform active={agentState === "listening" || agentState === "speaking" || streaming} />
+          {voiceError ? (
+            <p className="mx-auto mt-4 max-w-md rounded-md border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-amber-100">
+              {voiceError}
+            </p>
+          ) : null}
+          {transcript && agentState === "listening" ? (
+            <p className="mx-auto mt-4 max-w-md rounded-md border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-300">
+              {transcript}
+            </p>
+          ) : null}
           <div className="mt-6 flex justify-center gap-3">
             <Button
               variant="secondary"
-              disabled={!voiceSupported || streaming}
+              disabled={streaming}
               onClick={agentState === "listening" ? stopListening : startListening}
             >
               {agentState === "listening" ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              {agentState === "listening" ? "Stop" : "Talk"}
+              {agentState === "listening" ? "Stop" : voiceSupported ? "Talk" : "Voice Check"}
             </Button>
             <Button variant="secondary" onClick={() => void sendMessage("Quiz me on key concepts", "quiz")}>
               Quiz Mode

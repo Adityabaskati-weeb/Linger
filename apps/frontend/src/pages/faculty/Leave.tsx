@@ -29,6 +29,11 @@ export function FacultyLeave() {
     load();
   }
 
+  async function cancel(id: string) {
+    await api.delete(`/faculty/leave/${id}`);
+    load();
+  }
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
@@ -90,6 +95,11 @@ export function FacultyLeave() {
               </p>
               <p className="mt-2 text-sm text-slate-500">{request.reason}</p>
               {request.adminNote ? <p className="mt-2 text-xs text-cyan">{request.adminNote}</p> : null}
+              {request.status === "PENDING" ? (
+                <Button className="mt-3" size="sm" variant="danger" onClick={() => void cancel(request.id)}>
+                  Cancel Request
+                </Button>
+              ) : null}
             </div>
           ))}
         </div>
