@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  FACULTY
+  ADMIN
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum LeaveType {
+  SICK
+  CASUAL
+  EARNED
+  EMERGENCY
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  password      String
+  role          Role
+  name          String
+  avatarUrl     String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  student       Student?
+  faculty       Faculty?
+  admin         Admin?
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Department {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  code     String    @unique
+  courses  Course[]
+  students Student[]
+  faculty  Faculty[]
+}
+
+model Course {
+  id             String          @id @default(cuid())
+  name           String
+  code           String          @unique
+  departmentId   String
+  department     Department      @relation(fields: [departmentId], references: [id])
+  credits        Int             @default(3)
+  semester       Int
+  subjects       Subject[]
+  enrollments    Enrollment[]
+  timetableSlots TimetableSlot[]
+}
+
+model Subject {
+  id                 String              @id @default(cuid())
+  name               String
+  courseId           String
+  course             Course              @relation(fields: [courseId], references: [id])
+  materials          CourseMaterial[]
+  attendances        Attendance[]
+  attendanceSessions AttendanceSession[]
+  facultySubjects    FacultySubject[]
+  timetableSlots     TimetableSlot[]
+}
+
+model Student {
+  id           String       @id @default(cuid())
+  userId       String       @unique
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rollNumber   String       @unique
+  departmentId String
+  department   Department   @relation(fields: [departmentId], references: [id])
+  semester     Int
+  enrollments  Enrollment[]
+  attendances  Attendance[]
+  aiChats      AiChat[]
+}
+
+model Enrollment {
+  id         String   @id @default(cuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id])
+  enrolledAt DateTime @default(now())
+
+  @@unique([studentId, courseId])
+}
+
+model Faculty {
+  id                 String              @id @default(cuid())
+  userId             String              @unique
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employeeId         String              @unique
+  departmentId       String
+  department         Department          @relation(fields: [departmentId], references: [id])
+  weeklyHours        Int                 @default(18)
+  subjectPreferences String[]
+  facultySubjects    FacultySubject[]
+  leaveRequests      LeaveRequest[]
+  timetableSlots     TimetableSlot[]
+  attendanceSessions AttendanceSession[]
+}
+
+model FacultySubject {
+  id        String  @id @default(cuid())
+  facultyId String
+  faculty   Faculty @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  @@unique([facultyId, subjectId])
+}
+
+model Admin {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title  String @default("Principal")
+}
+
+model AttendanceSession {
+  id          String       @id @default(cuid())
+  facultyId   String
+  faculty     Faculty      @relation(fields: [facultyId], references: [id])
+  subjectId   String
+  subject     Subject      @relation(fields: [subjectId], references: [id])
+  date        DateTime     @default(now())
+  duration    Int
+  attendances Attendance[]
+}
+
+model Attendance {
+  id        String            @id @default(cuid())
+  studentId String
+  student   Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subjectId String
+  subject   Subject           @relation(fields: [subjectId], references: [id])
+  sessionId String
+  session   AttendanceSession @relation(fields: [sessionId], references: [id])
+  status    AttendanceStatus  @default(PRESENT)
+  markedAt  DateTime          @default(now())
+
+  @@unique([studentId, sessionId])
+}
+
+model LeaveRequest {
+  id        String      @id @default(cuid())
+  facultyId String
+  faculty   Faculty     @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  type      LeaveType
+  fromDate  DateTime
+  toDate    DateTime
+  reason    String
+  status    LeaveStatus @default(PENDING)
+  adminNote String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Timetable {
+  id        String          @id @default(cuid())
+  name      String
+  semester  Int
+  isActive  Boolean         @default(false)
+  createdAt DateTime        @default(now())
+  slots     TimetableSlot[]
+}
+
+model TimetableSlot {
+  id          String     @id @default(cuid())
+  timetableId String
+  timetable   Timetable  @relation(fields: [timetableId], references: [id], onDelete: Cascade)
+  day         DayOfWeek
+  startTime   String
+  endTime     String
+  facultyId   String
+  faculty     Faculty    @relation(fields: [facultyId], references: [id])
+  subjectId   String
+  subject     Subject    @relation(fields: [subjectId], references: [id])
+  courseId    String
+  course      Course     @relation(fields: [courseId], references: [id])
+  room        String
+
+  @@unique([timetableId, day, startTime, room])
+  @@unique([timetableId, day, startTime, facultyId])
+}
+
+model CourseMaterial {
+  id         String   @id @default(cuid())
+  subjectId  String
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  title      String
+  fileUrl    String?
+  content    String   @db.Text
+  uploadedAt DateTime @default(now())
+  uploadedBy String
+}
+
+model AiChat {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subjectId String
+  messages  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
