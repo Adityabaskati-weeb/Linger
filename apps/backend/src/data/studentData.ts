@@ -16,6 +16,7 @@ const subjects = [
     faculty: "Dr. Nisha Rao",
     totalClasses: 42,
     attendedClasses: 33,
+    remainingClasses: 16,
     trend: [74, 75, 76, 78, 77, 79],
     color: "#6366F1"
   },
@@ -26,6 +27,7 @@ const subjects = [
     faculty: "Prof. Arjun Iyer",
     totalClasses: 38,
     attendedClasses: 27,
+    remainingClasses: 18,
     trend: [69, 70, 71, 70, 72, 71],
     color: "#06B6D4"
   },
@@ -36,6 +38,7 @@ const subjects = [
     faculty: "Dr. Meera Shah",
     totalClasses: 36,
     attendedClasses: 31,
+    remainingClasses: 15,
     trend: [82, 83, 84, 86, 85, 86],
     color: "#10B981"
   },
@@ -46,6 +49,7 @@ const subjects = [
     faculty: "Prof. Rohan Das",
     totalClasses: 34,
     attendedClasses: 24,
+    remainingClasses: 18,
     trend: [68, 69, 70, 71, 70, 71],
     color: "#F59E0B"
   },
@@ -56,6 +60,7 @@ const subjects = [
     faculty: "Dr. Nisha Rao",
     totalClasses: 30,
     attendedClasses: 27,
+    remainingClasses: 16,
     trend: [87, 88, 89, 90, 90, 90],
     color: "#3B82F6"
   }
@@ -83,15 +88,15 @@ const attendanceRecords: AttendanceRecord[] = [
   record("a-1", "2026-05-04", subjects[0], "PRESENT"),
   record("a-2", "2026-05-04", subjects[1], "ABSENT"),
   record("a-3", "2026-05-04", subjects[2], "PRESENT"),
-  record("a-4", "2026-05-04", subjects[4], "LATE"),
+  record("a-4", "2026-05-04", subjects[4], "PRESENT"),
   record("a-5", "2026-05-03", subjects[3], "ABSENT"),
   record("a-6", "2026-05-03", subjects[0], "PRESENT"),
   record("a-7", "2026-05-02", subjects[2], "PRESENT"),
   record("a-8", "2026-05-02", subjects[1], "PRESENT"),
   record("a-9", "2026-05-01", subjects[4], "PRESENT"),
-  record("a-10", "2026-05-01", subjects[3], "LATE"),
+  record("a-10", "2026-05-01", subjects[3], "ABSENT"),
   record("a-11", "2026-04-30", subjects[0], "PRESENT"),
-  record("a-12", "2026-04-30", subjects[2], "EXCUSED")
+  record("a-12", "2026-04-30", subjects[2], "PRESENT")
 ];
 
 function slot(
@@ -139,6 +144,16 @@ export function classesNeededFor75(attended: number, total: number) {
 export function getStudentAttendanceSummary(): SubjectAttendanceSummary[] {
   return subjects.map((subject) => {
     const attendancePercentage = Math.round((subject.attendedClasses / subject.totalClasses) * 100);
+    const needed = classesNeededFor75(subject.attendedClasses, subject.totalClasses);
+    const projectedAttended = subject.attendedClasses + Math.round(subject.remainingClasses * 0.82);
+    const projectedTotal = subject.totalClasses + subject.remainingClasses;
+    const thresholdProbability =
+      needed === 0
+        ? 98
+        : Math.max(
+            8,
+            Math.min(95, Math.round(((subject.remainingClasses - needed + 1) / subject.remainingClasses) * 100))
+          );
 
     return {
       subjectId: subject.subjectId,
@@ -148,7 +163,10 @@ export function getStudentAttendanceSummary(): SubjectAttendanceSummary[] {
       totalClasses: subject.totalClasses,
       attendedClasses: subject.attendedClasses,
       attendancePercentage,
-      classesNeededFor75: classesNeededFor75(subject.attendedClasses, subject.totalClasses),
+      classesNeededFor75: needed,
+      remainingClasses: subject.remainingClasses,
+      projectedAttendance: Math.round((projectedAttended / projectedTotal) * 100),
+      thresholdProbability,
       trend: subject.trend
     };
   });

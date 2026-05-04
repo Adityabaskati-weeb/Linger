@@ -57,6 +57,7 @@ export interface CourseMaterialData {
   fileSize: number;
   uploadedAt: string;
   contentPreview: string;
+  content?: string;
 }
 
 export interface FacultyDashboardData {

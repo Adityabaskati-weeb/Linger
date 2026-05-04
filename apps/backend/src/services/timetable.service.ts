@@ -17,12 +17,12 @@ export function generateTimetable(config: TimetableGenerationConfig): GeneratedT
   const facultyBusy = new Set<string>();
   const roomBusy = new Set<string>();
   const subjectPerDay = new Set<string>();
-  let cursor = 0;
 
-  for (const subject of subjects) {
+  for (const [subjectIndex, subject] of subjects.entries()) {
     let required = subject.subjectId === "sub-dsa" ? 4 : 3;
+    const rotatedDays = [...config.days.slice(subjectIndex % config.days.length), ...config.days.slice(0, subjectIndex % config.days.length)];
 
-    for (const day of config.days) {
+    for (const day of rotatedDays) {
       if (required === 0) break;
 
       for (const time of timeSlots) {
@@ -30,19 +30,18 @@ export function generateTimetable(config: TimetableGenerationConfig): GeneratedT
 
         const facultyKey = `${day}:${time.start}:${subject.faculty}`;
         const daySubjectKey = `${day}:${subject.subjectId}`;
-        const room = rooms[cursor % rooms.length];
-        const roomKey = `${day}:${time.start}:${room}`;
+        const room = rooms.find((candidate) => !roomBusy.has(`${day}:${time.start}:${candidate}`));
 
         if (
+          !room ||
           facultyBusy.has(facultyKey) ||
-          roomBusy.has(roomKey) ||
           subjectPerDay.has(daySubjectKey) ||
-          exceedsConsecutive(slots, subject.faculty, day, time.start, config.maxConsecutive)
+          exceedsConsecutive(slots, subject.faculty, day, time.start, config.maxConsecutive, config.slotDuration)
         ) {
-          cursor += 1;
           continue;
         }
 
+        const roomKey = `${day}:${time.start}:${room}`;
         slots.push({
           id: `gen-${subject.subjectId}-${day}-${time.start}`,
           day,
@@ -59,7 +58,6 @@ export function generateTimetable(config: TimetableGenerationConfig): GeneratedT
         roomBusy.add(roomKey);
         subjectPerDay.add(daySubjectKey);
         required -= 1;
-        cursor += 1;
       }
     }
   }
@@ -127,7 +125,8 @@ function exceedsConsecutive(
   faculty: string,
   day: DayOfWeek,
   startTime: string,
-  maxConsecutive: number
+  maxConsecutive: number,
+  slotDuration: number
 ) {
   const sameDay = slots
     .filter((slot) => slot.faculty === faculty && slot.day === day)
@@ -138,7 +137,7 @@ function exceedsConsecutive(
   let previous = start;
 
   for (const slotStart of [...sameDay].reverse()) {
-    if (previous - slotStart === 60) {
+    if (previous - slotStart === slotDuration) {
       streak += 1;
       previous = slotStart;
     }

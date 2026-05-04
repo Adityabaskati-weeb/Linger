@@ -138,7 +138,7 @@ async function streamGeminiResponse(
 function getSubjectContext(subjectId: string) {
   const uploaded = getMaterials()
     .filter((material) => material.subjectId === subjectId)
-    .map((material) => material.contentPreview)
+    .map((material) => `Source: ${material.title}\n${material.content ?? material.contentPreview}`)
     .join("\n\n");
 
   return uploaded || fallbackContext[subjectId] || "No uploaded material is available yet.";
@@ -149,27 +149,48 @@ async function streamLocalResponse(input: AiChatRequest, onToken: (token: string
   const wantsQuiz = input.mode === "quiz" || latest.includes("quiz");
   const wantsSummary = input.mode === "summary" || latest.includes("summar");
   const context = getSubjectContext(input.subjectId);
+  const sourceTitle = context.match(/Source:\s*(.+)/)?.[1]?.trim() ?? "uploaded material";
+  const sentences = context
+    .replace(/Source:.+\n/g, "")
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 30);
+  const keyPoints = sentences.slice(0, 5);
+  const quizFact = keyPoints[0] ?? context.slice(0, 140);
   let response: string;
 
   if (wantsQuiz) {
-    response =
-      "[QUIZ] Which traversal explores all immediate neighbors before moving deeper? A) Depth-first search B) Breadth-first search C) Binary search D) Heap sort ANSWER: B";
+    response = `[QUIZ] According to ${sourceTitle}, which statement is most accurate? A) ${makeWrongOption(
+      quizFact
+    )} B) ${quizFact} C) The uploaded material is unrelated to this subject D) None of the concepts appear in the notes ANSWER: B`;
   } else if (wantsSummary) {
-    response = `[SUMMARY] Key takeaways: ${context.slice(
-      0,
-      260
-    )} Focus on definitions, use cases, and when each algorithm or idea applies.`;
+    response = `[SUMMARY]
+- Source used: ${sourceTitle}
+${keyPoints.map((point) => `- ${point}`).join("\n")}
+- Exam focus: revise definitions, use cases, and the differences between similar concepts from this uploaded document.`;
   } else {
     response = `[CONCEPT] Based on the uploaded course context: ${context.slice(
       0,
       320
-    )} Ask for a quiz or summary to switch study mode.`;
+    )} Ask for quiz mode to practice the concept or summary mode for quick revision.`;
   }
 
   for (const token of response.match(/.{1,18}(\s|$)/g) ?? [response]) {
     await new Promise((resolve) => setTimeout(resolve, 18));
     await onToken(token);
   }
+}
+
+function makeWrongOption(text: string) {
+  if (/breadth-first|bfs/i.test(text)) {
+    return "Breadth-first search always explores the deepest branch before checking nearby vertices";
+  }
+
+  if (/supervised/i.test(text)) {
+    return "Supervised learning never uses labels during training";
+  }
+
+  return "The document says the topic should be ignored during exam preparation";
 }
 
 function key(studentId: string, subjectId: string) {

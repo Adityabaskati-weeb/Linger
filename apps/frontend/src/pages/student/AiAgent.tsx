@@ -1,7 +1,7 @@
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { AiMessage, AiMode, AiSubject } from "@campusiq/shared";
-import { Mic, Send, Square } from "lucide-react";
+import { FileUp, Mic, Send, Square } from "lucide-react";
 import { AiOrb } from "../../components/ai/AiOrb";
 import { ChatBubble } from "../../components/ai/ChatBubble";
 import { QuickActionPills } from "../../components/ai/QuickActionPills";
@@ -20,6 +20,8 @@ export function StudentAiAgent() {
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<AiMode>("text");
   const [streaming, setStreaming] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const accessToken = useAuthStore((state) => state.accessToken);
   const processedVoiceIdRef = useRef(0);
   const {
@@ -120,12 +122,35 @@ export function StudentAiAgent() {
     [accessToken, input, messages, mode, setAgentState, speak, subjectId, streaming]
   );
 
-  useEffect(() => {
+  function loadSubjects() {
     api.get<{ success: true; data: AiSubject[] }>("/ai/subjects").then((response) => {
       setSubjects(response.data.data);
-      setSubjectId(response.data.data[0]?.subjectId ?? "");
+      setSubjectId((current) => current || response.data.data[0]?.subjectId || "");
     });
+  }
+
+  useEffect(() => {
+    loadSubjects();
   }, []);
+
+  async function uploadMaterial(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!uploadFile || !subjectId) return;
+
+    const form = new FormData();
+    form.append("file", uploadFile);
+    form.append("subjectId", subjectId);
+    form.append("title", uploadFile.name);
+    setUploading(true);
+
+    try {
+      await api.post("/ai/materials/upload", form);
+      setUploadFile(null);
+      loadSubjects();
+    } finally {
+      setUploading(false);
+    }
+  }
 
   useEffect(() => {
     if (transcript) {
@@ -179,6 +204,22 @@ export function StudentAiAgent() {
           ))}
         </select>
 
+        <form onSubmit={uploadMaterial} className="mb-4 rounded-lg border border-cyan/15 bg-cyan/10 p-4">
+          <p className="mb-3 text-sm font-medium text-cyan-100">Upload material for this AI subject</p>
+          <div className="flex flex-col gap-3 md:flex-row">
+            <input
+              type="file"
+              accept=".pdf,.docx,.txt,text/plain,application/pdf"
+              onChange={(event: ChangeEvent<HTMLInputElement>) => setUploadFile(event.target.files?.[0] ?? null)}
+              className="block flex-1 text-sm text-slate-400 file:mr-4 file:rounded-md file:border-0 file:bg-white/[0.08] file:px-4 file:py-2 file:text-sm file:text-white"
+            />
+            <Button type="submit" variant="secondary" loading={uploading} disabled={!uploadFile}>
+              <FileUp className="h-4 w-4" />
+              Upload
+            </Button>
+          </div>
+        </form>
+
         <div className="flex-1 space-y-3 overflow-y-auto pr-1">
           {messages.length ? (
             messages.map((message, index) => <ChatBubble key={index} message={message} />)
@@ -216,6 +257,11 @@ export function StudentAiAgent() {
           {voiceError ? (
             <p className="mx-auto mt-4 max-w-md rounded-md border border-warning/20 bg-warning/10 px-4 py-3 text-sm text-amber-100">
               {voiceError}
+            </p>
+          ) : null}
+          {!voiceError ? (
+            <p className="mx-auto mt-4 max-w-md text-xs leading-5 text-slate-500">
+              Voice works best in Chrome or Edge on localhost with microphone permission allowed.
             </p>
           ) : null}
           {transcript && agentState === "listening" ? (

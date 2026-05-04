@@ -3,9 +3,13 @@ import type {
   AttendanceAnalyticsData,
   AttendanceTrendPoint,
   AtRiskStudentRow,
+  DepartmentAcademicMap,
   DepartmentAttendancePoint,
-  FacultyProductivityRow
+  FacultyAttendanceRow,
+  FacultyProductivityRow,
+  StudentOverviewRow
 } from "@campusiq/shared";
+import { getAnnouncements } from "./announcementData";
 import { getLeaveRequests } from "./facultyData";
 import { getStudentAttendanceSummary } from "./studentData";
 
@@ -29,11 +33,13 @@ const departmentAttendance: DepartmentAttendancePoint[] = [
   { department: "CE", current: 83, previous: 80 }
 ];
 
-const facultyProductivity: FacultyProductivityRow[] = [
+let facultyProductivity: FacultyProductivityRow[] = [
   {
     id: "fac-1",
     name: "Dr. Nisha Rao",
     department: "Computer Science",
+    employeeId: "E16783",
+    subjectCode: "CS301 / CS309",
     classesThisMonth: 34,
     studentsTaught: 80,
     leaveDaysUsed: 1,
@@ -43,6 +49,8 @@ const facultyProductivity: FacultyProductivityRow[] = [
     id: "fac-2",
     name: "Prof. Arjun Iyer",
     department: "Computer Science",
+    employeeId: "E17420",
+    subjectCode: "CS303",
     classesThisMonth: 29,
     studentsTaught: 72,
     leaveDaysUsed: 2,
@@ -52,6 +60,8 @@ const facultyProductivity: FacultyProductivityRow[] = [
     id: "fac-3",
     name: "Dr. Meera Shah",
     department: "Computer Science",
+    employeeId: "E18116",
+    subjectCode: "CS305",
     classesThisMonth: 31,
     studentsTaught: 76,
     leaveDaysUsed: 0,
@@ -59,16 +69,85 @@ const facultyProductivity: FacultyProductivityRow[] = [
   }
 ];
 
+let studentOverview: StudentOverviewRow[] = [
+  { id: "stu-1", name: "Telheiba", rollNumber: "CS26-112", department: "CS", semester: 6, overall: 79 },
+  { id: "stu-2", name: "Isha Kapoor", rollNumber: "CS25-052", department: "CS", semester: 5, overall: 88 },
+  { id: "stu-3", name: "Kabir Sethi", rollNumber: "CS25-058", department: "CS", semester: 5, overall: 73 },
+  { id: "stu-4", name: "Naina Roy", rollNumber: "CS25-063", department: "CS", semester: 5, overall: 91 },
+  { id: "stu-5", name: "Tara Joshi", rollNumber: "CS25-074", department: "CS", semester: 5, overall: 84 }
+];
+
 const atRiskStudents: AtRiskStudentRow[] = getStudentAttendanceSummary()
   .filter((summary) => summary.attendancePercentage < 75)
   .map((summary, index) => ({
     id: `risk-${summary.subjectId}`,
-    name: index === 0 ? "Aarav Mehta" : "Kabir Sethi",
-    rollNumber: index === 0 ? "CS25-047" : "CS25-058",
+    name: index === 0 ? "Telheiba" : "Kabir Sethi",
+    rollNumber: index === 0 ? "CS26-112" : "CS25-058",
     subject: summary.subject,
+    subjectCode: summary.code,
     attendancePercentage: summary.attendancePercentage,
     classesNeededFor75: summary.classesNeededFor75
   }));
+
+const departments: DepartmentAcademicMap[] = [
+  {
+    id: "dept-cs",
+    name: "Computer Science",
+    code: "CS",
+    courses: 4,
+    purpose: "Used to compare attendance health, elective enrollment, faculty load, and timetable coverage.",
+    subjects: [
+      {
+        subject: "Data Structures",
+        code: "CS301",
+        faculty: ["Dr. Nisha Rao"],
+        students: ["Telheiba", "Isha Kapoor", "Kabir Sethi", "Naina Roy", "Reyansh Nair"]
+      },
+      {
+        subject: "AI Fundamentals",
+        code: "CS309",
+        faculty: ["Dr. Nisha Rao"],
+        students: ["Telheiba", "Tara Joshi", "Vihaan Kulkarni", "Zoya Fernandes"]
+      },
+      {
+        subject: "Operating Systems",
+        code: "CS303",
+        faculty: ["Prof. Arjun Iyer"],
+        students: ["Isha Kapoor", "Kabir Sethi", "Reyansh Nair"]
+      }
+    ]
+  },
+  {
+    id: "dept-ece",
+    name: "Electronics",
+    code: "ECE",
+    courses: 3,
+    purpose: "Tracks circuit lab attendance, faculty workload, and cross-department electives.",
+    subjects: [
+      { subject: "Digital Electronics", code: "EC201", faculty: ["Prof. Kavya Menon"], students: ["Anaya Rao", "Dev Patel"] }
+    ]
+  },
+  {
+    id: "dept-me",
+    name: "Mechanical",
+    code: "ME",
+    courses: 3,
+    purpose: "Summarizes workshop attendance and room/lab utilization for timetable planning.",
+    subjects: [
+      { subject: "Thermodynamics", code: "ME204", faculty: ["Dr. Viren Sood"], students: ["Raghav Jain", "Sahil Khan"] }
+    ]
+  },
+  {
+    id: "dept-ce",
+    name: "Civil",
+    code: "CE",
+    courses: 3,
+    purpose: "Supports construction lab scheduling and student risk reporting.",
+    subjects: [
+      { subject: "Surveying", code: "CE210", faculty: ["Prof. Leena Dutta"], students: ["Mehak Gill", "Aditi Sinha"] }
+    ]
+  }
+];
 
 const aiHeatmap = Array.from({ length: 7 }, (_, day) =>
   Array.from({ length: 24 }, (_, hour) => {
@@ -78,6 +157,36 @@ const aiHeatmap = Array.from({ length: 7 }, (_, day) =>
   })
 );
 
+const facultyAttendance: FacultyAttendanceRow[] = [
+  {
+    id: "fac-att-1",
+    name: "Dr. Nisha Rao",
+    employeeId: "E16783",
+    department: "Computer Science",
+    presentDays: 22,
+    totalWorkingDays: 24,
+    attendancePercentage: 92
+  },
+  {
+    id: "fac-att-2",
+    name: "Prof. Arjun Iyer",
+    employeeId: "E17420",
+    department: "Computer Science",
+    presentDays: 20,
+    totalWorkingDays: 24,
+    attendancePercentage: 83
+  },
+  {
+    id: "fac-att-3",
+    name: "Dr. Meera Shah",
+    employeeId: "E18116",
+    department: "Computer Science",
+    presentDays: 24,
+    totalWorkingDays: 24,
+    attendancePercentage: 100
+  }
+];
+
 export function getAdminDashboard(): AdminDashboardData {
   const leaves = getLeaveRequests();
   const pendingLeaves = leaves.filter((request) => request.status === "PENDING");
@@ -85,11 +194,18 @@ export function getAdminDashboard(): AdminDashboardData {
   const avgAttendance = Math.round(
     trends.reduce((sum, point) => sum + point.overall, 0) / trends.length
   );
+  const avgStudentAttendance = Math.round(
+    studentOverview.reduce((sum, student) => sum + student.overall, 0) / studentOverview.length
+  );
+  const avgFacultyAttendance = Math.round(
+    facultyProductivity.reduce((sum, faculty) => sum + Math.min(98, 70 + faculty.classesThisMonth / 2), 0) /
+      facultyProductivity.length
+  );
   const leaveApprovalRate =
     decidedLeaves.length > 0
       ? (decidedLeaves.filter((request) => request.status === "APPROVED").length / decidedLeaves.length) * 100
       : 100;
-  const aiEngagement = Math.min(1, 48 / 60);
+  const aiEngagement = Math.min(1, 48 / Math.max(1, studentOverview.length * 12));
   const campusHealthScore = Math.min(
     100,
     Math.round(avgAttendance * 0.5 + leaveApprovalRate * 0.3 + aiEngagement * 100 * 0.2)
@@ -98,9 +214,11 @@ export function getAdminDashboard(): AdminDashboardData {
   return {
     campusHealthScore,
     kpis: {
-      totalStudents: 80,
-      totalFaculty: 16,
+      totalStudents: Math.max(80, studentOverview.length),
+      totalFaculty: Math.max(16, facultyProductivity.length),
       todayAvgAttendance: avgAttendance,
+      avgStudentAttendance,
+      avgFacultyAttendance,
       activeLeaveRequests: pendingLeaves.length,
       aiSessionsToday: 48,
       classesConductedToday: 36
@@ -108,8 +226,10 @@ export function getAdminDashboard(): AdminDashboardData {
     attendanceTrends: trends,
     departmentAttendance,
     facultyProductivity,
+    facultyAttendance,
     aiHeatmap,
-    pendingLeaves
+    pendingLeaves,
+    announcements: getAnnouncements()
   };
 }
 
@@ -124,11 +244,63 @@ export function getFacultyProductivity() {
   return facultyProductivity;
 }
 
+export function getFacultyAttendance() {
+  return facultyAttendance;
+}
+
+export function createFaculty(input: { name: string; department: string; employeeId: string; subjectCode: string }) {
+  const faculty: FacultyProductivityRow = {
+    id: `fac-${Date.now()}`,
+    name: input.name,
+    department: input.department,
+    employeeId: input.employeeId,
+    subjectCode: input.subjectCode,
+    classesThisMonth: 0,
+    studentsTaught: 0,
+    leaveDaysUsed: 0,
+    materialUploads: 0
+  };
+
+  facultyProductivity = [faculty, ...facultyProductivity];
+  return faculty;
+}
+
+export function removeFaculty(id: string) {
+  const exists = facultyProductivity.some((faculty) => faculty.id === id);
+  facultyProductivity = facultyProductivity.filter((faculty) => faculty.id !== id);
+  return exists;
+}
+
 export function getStudentOverview() {
-  return [
-    { id: "stu-1", name: "Aarav Mehta", rollNumber: "CS25-047", department: "CS", semester: 5, overall: 79 },
-    { id: "stu-2", name: "Isha Kapoor", rollNumber: "CS25-052", department: "CS", semester: 5, overall: 88 },
-    { id: "stu-3", name: "Kabir Sethi", rollNumber: "CS25-058", department: "CS", semester: 5, overall: 73 },
-    { id: "stu-4", name: "Naina Roy", rollNumber: "CS25-063", department: "CS", semester: 5, overall: 91 }
-  ];
+  return studentOverview;
+}
+
+export function createStudent(input: {
+  name: string;
+  rollNumber: string;
+  department: string;
+  semester: number;
+  overall?: number;
+}) {
+  const student: StudentOverviewRow = {
+    id: `stu-${Date.now()}`,
+    name: input.name,
+    rollNumber: input.rollNumber,
+    department: input.department,
+    semester: input.semester,
+    overall: input.overall ?? 75
+  };
+
+  studentOverview = [student, ...studentOverview];
+  return student;
+}
+
+export function removeStudent(id: string) {
+  const exists = studentOverview.some((student) => student.id === id);
+  studentOverview = studentOverview.filter((student) => student.id !== id);
+  return exists;
+}
+
+export function getDepartments() {
+  return departments;
 }

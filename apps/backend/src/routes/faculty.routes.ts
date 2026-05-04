@@ -3,6 +3,7 @@ import multer from "multer";
 import mammoth from "mammoth";
 import pdfParse from "pdf-parse";
 import { z } from "zod";
+import { createAnnouncement, getAnnouncements } from "../data/announcementData";
 import {
   cancelLeaveRequest,
   createAttendanceSession,
@@ -11,6 +12,7 @@ import {
   deleteMaterial,
   getAttendanceSessions,
   getFacultyDashboard,
+  getFacultyProfile,
   getFacultyRoster,
   getFacultySchedule,
   getFacultySubjects,
@@ -31,7 +33,7 @@ const attendanceSchema = z.object({
   marks: z.array(
     z.object({
       studentId: z.string(),
-      status: z.enum(["PRESENT", "ABSENT", "LATE", "EXCUSED"])
+      status: z.enum(["PRESENT", "ABSENT"])
     })
   )
 });
@@ -43,9 +45,29 @@ const leaveSchema = z.object({
   reason: z.string().min(8)
 });
 
+const announcementSchema = z.object({
+  title: z.string().min(4),
+  body: z.string().min(8),
+  category: z.enum(["ACADEMIC", "EXAM", "EVENT", "GENERAL"]).default("ACADEMIC")
+});
+
 export const facultyRouter = Router();
 
 facultyRouter.get("/dashboard", (_req, res) => ok(res, getFacultyDashboard()));
+facultyRouter.get("/announcements", (_req, res) => ok(res, getAnnouncements("STUDENT")));
+facultyRouter.post("/announcements", (req, res) => {
+  const input = announcementSchema.parse(req.body);
+  return ok(
+    res,
+    createAnnouncement({
+      ...input,
+      audience: "STUDENT",
+      author: "Faculty Desk"
+    }),
+    201
+  );
+});
+facultyRouter.get("/profile", (_req, res) => ok(res, getFacultyProfile()));
 facultyRouter.get("/schedule", (_req, res) => ok(res, getFacultySchedule()));
 facultyRouter.get("/subjects", (_req, res) => ok(res, getFacultySubjects()));
 facultyRouter.get("/subjects/:subjectId/roster", (req, res) =>

@@ -9,6 +9,9 @@ export interface SubjectAttendanceSummary {
   attendedClasses: number;
   attendancePercentage: number;
   classesNeededFor75: number;
+  remainingClasses: number;
+  projectedAttendance: number;
+  thresholdProbability: number;
   trend: number[];
 }
 

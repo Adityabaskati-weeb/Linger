@@ -42,9 +42,9 @@ export function useVoiceAgent() {
     }
 
     const recognition = new recognitionConstructor();
-    recognition.lang = "en-IN";
+    recognition.lang = navigator.language?.toLowerCase().startsWith("en") ? navigator.language : "en-US";
     recognition.interimResults = true;
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.onresult = (event) => {
       const nextTranscript = Array.from(event.results)
         .map((result) => result[0]?.transcript ?? "")
@@ -67,7 +67,14 @@ export function useVoiceAgent() {
       }
     };
     recognition.onerror = (event) => {
-      const reason = event?.error === "not-allowed" ? "Microphone permission was blocked." : "Voice input stopped.";
+      const reason =
+        event?.error === "not-allowed"
+          ? "Microphone permission was blocked."
+          : event?.error === "no-speech"
+            ? "No speech was detected. Keep the mic close and try again."
+            : event?.error === "network"
+              ? "Browser speech recognition needs network access in this environment."
+              : "Voice input stopped.";
       setVoiceError(`${reason} You can still type the question below.`);
       setAgentState("idle");
     };
@@ -75,13 +82,20 @@ export function useVoiceAgent() {
     setVoiceSupported(true);
   }, []);
 
-  function startListening() {
+  async function startListening() {
     if (!recognitionRef.current) {
       setVoiceError("Voice input is not available in this browser. Type your question instead.");
       return;
     }
 
-    speechSynthesis.cancel();
+    if (!window.isSecureContext && window.location.hostname !== "localhost") {
+      setVoiceError("Voice input requires HTTPS or localhost. Open the app on localhost or a secure URL.");
+      return;
+    }
+
+    if ("speechSynthesis" in window) {
+      speechSynthesis.cancel();
+    }
     setTranscript("");
     setFinalTranscript("");
     transcriptRef.current = "";
@@ -90,9 +104,16 @@ export function useVoiceAgent() {
     setAgentState("listening");
 
     try {
+      const stream = await navigator.mediaDevices?.getUserMedia?.({ audio: true });
+      stream?.getTracks().forEach((track) => track.stop());
       recognitionRef.current.start();
-    } catch {
-      setVoiceError("Voice input is already active. Stop it and try again.");
+    } catch (error) {
+      recognitionRef.current.abort?.();
+      setAgentState("idle");
+      const message = error instanceof Error && error.name === "NotAllowedError"
+        ? "Microphone permission was blocked. Allow microphone access from the browser address bar."
+        : "Voice input could not start. Chrome or Edge on localhost works best.";
+      setVoiceError(message);
     }
   }
 

@@ -3,11 +3,15 @@ import {
   BookOpen,
   Building2,
   CalendarDays,
+  ClipboardList,
   GraduationCap,
+  IdCard,
   LayoutDashboard,
   LogOut,
   PlaneTakeoff,
+  PlayCircle,
   ShieldCheck,
+  UserRound,
   Users
 } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
@@ -30,7 +34,10 @@ const roleMeta: Record<Role, { title: string; subtitle: string; nav: NavItem[] }
       { label: "Dashboard", href: "/student/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
       { label: "Attendance", href: "/student/attendance", icon: <ShieldCheck className="h-4 w-4" /> },
       { label: "Schedule", href: "/student/schedule", icon: <CalendarDays className="h-4 w-4" /> },
-      { label: "AI Agent", href: "/student/ai-agent", icon: <BookOpen className="h-4 w-4" /> }
+      { label: "AI Agent", href: "/student/ai-agent", icon: <BookOpen className="h-4 w-4" /> },
+      { label: "Services", href: "/student/services", icon: <ClipboardList className="h-4 w-4" /> },
+      { label: "Online Test", href: "/student/online-test", icon: <PlayCircle className="h-4 w-4" /> },
+      { label: "Profile", href: "/student/profile", icon: <IdCard className="h-4 w-4" /> }
     ]
   },
   FACULTY: {
@@ -41,7 +48,8 @@ const roleMeta: Record<Role, { title: string; subtitle: string; nav: NavItem[] }
       { label: "Attendance", href: "/faculty/attendance", icon: <ShieldCheck className="h-4 w-4" /> },
       { label: "Schedule", href: "/faculty/schedule", icon: <CalendarDays className="h-4 w-4" /> },
       { label: "Leave", href: "/faculty/leave", icon: <PlaneTakeoff className="h-4 w-4" /> },
-      { label: "Materials", href: "/faculty/materials", icon: <BookOpen className="h-4 w-4" /> }
+      { label: "Materials", href: "/faculty/materials", icon: <BookOpen className="h-4 w-4" /> },
+      { label: "Profile", href: "/faculty/profile", icon: <UserRound className="h-4 w-4" /> }
     ]
   },
   ADMIN: {

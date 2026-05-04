@@ -12,12 +12,12 @@ const passwordHash = bcrypt.hashSync("campusiq123", 10);
 export const demoUsers: DemoUserRecord[] = [
   {
     id: "student-demo-1",
-    name: "Aarav Mehta",
+    name: "Telheiba",
     email: "student@campusiq.edu",
     role: "STUDENT",
     avatarUrl: "",
     department: "Computer Science",
-    title: "Semester 5 Student",
+    title: "Semester 6 Student",
     passwordHash
   },
   {

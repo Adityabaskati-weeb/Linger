@@ -96,17 +96,25 @@ async function main() {
 
   const studentUser = await prisma.user.upsert({
     where: { email: "student@campusiq.edu" },
-    update: {},
+    update: {
+      name: "Telheiba",
+      student: {
+        update: {
+          rollNumber: "CS26-112",
+          semester: 6
+        }
+      }
+    },
     create: {
       email: "student@campusiq.edu",
       password,
       role: Role.STUDENT,
-      name: "Aarav Mehta",
+      name: "Telheiba",
       student: {
         create: {
-          rollNumber: "CS25-047",
+          rollNumber: "CS26-112",
           departmentId: department.id,
-          semester: 5,
+          semester: 6,
           enrollments: {
             create: {
               courseId: course.id

@@ -12,21 +12,37 @@ import type {
   TimetableSlot
 } from "@campusiq/shared";
 
-const facultySubjects: FacultySubject[] = [
+const subjectCatalog: FacultySubject[] = [
   { subjectId: "sub-dsa", subject: "Data Structures", code: "CS301", enrolledStudents: 42 },
+  { subjectId: "sub-os", subject: "Operating Systems", code: "CS303", enrolledStudents: 40 },
+  { subjectId: "sub-dbms", subject: "Database Systems", code: "CS305", enrolledStudents: 44 },
+  { subjectId: "sub-cn", subject: "Computer Networks", code: "CS307", enrolledStudents: 39 },
   { subjectId: "sub-ai", subject: "AI Fundamentals", code: "CS309", enrolledStudents: 38 }
 ];
 
-const roster: RosterStudent[] = [
-  { id: "stu-1", name: "Aarav Mehta", rollNumber: "CS25-047" },
-  { id: "stu-2", name: "Isha Kapoor", rollNumber: "CS25-052" },
-  { id: "stu-3", name: "Kabir Sethi", rollNumber: "CS25-058" },
-  { id: "stu-4", name: "Naina Roy", rollNumber: "CS25-063" },
-  { id: "stu-5", name: "Reyansh Nair", rollNumber: "CS25-069" },
-  { id: "stu-6", name: "Tara Joshi", rollNumber: "CS25-074" },
-  { id: "stu-7", name: "Vihaan Kulkarni", rollNumber: "CS25-081" },
-  { id: "stu-8", name: "Zoya Fernandes", rollNumber: "CS25-088" }
-];
+const facultySubjects: FacultySubject[] = [subjectCatalog[0], subjectCatalog[4]];
+
+const rosterBySubject: Record<string, RosterStudent[]> = {
+  "sub-dsa": [
+    { id: "stu-1", name: "Telheiba", rollNumber: "CS26-112" },
+    { id: "stu-2", name: "Isha Kapoor", rollNumber: "CS25-052" },
+    { id: "stu-3", name: "Kabir Sethi", rollNumber: "CS25-058" },
+    { id: "stu-4", name: "Naina Roy", rollNumber: "CS25-063" },
+    { id: "stu-5", name: "Reyansh Nair", rollNumber: "CS25-069" },
+    { id: "stu-6", name: "Tara Joshi", rollNumber: "CS25-074" }
+  ],
+  "sub-ai": [
+    { id: "stu-1", name: "Telheiba", rollNumber: "CS26-112" },
+    { id: "stu-6", name: "Tara Joshi", rollNumber: "CS25-074" },
+    { id: "stu-7", name: "Vihaan Kulkarni", rollNumber: "CS25-081" },
+    { id: "stu-8", name: "Zoya Fernandes", rollNumber: "CS25-088" }
+  ],
+  "sub-os": [
+    { id: "stu-2", name: "Isha Kapoor", rollNumber: "CS25-052" },
+    { id: "stu-3", name: "Kabir Sethi", rollNumber: "CS25-058" },
+    { id: "stu-5", name: "Reyansh Nair", rollNumber: "CS25-069" }
+  ]
+};
 
 const schedule: TimetableSlot[] = [
   slot("fac-tt-1", "MONDAY", "09:00", "10:00", facultySubjects[0], "Lab 201", "#6366F1"),
@@ -45,8 +61,8 @@ let attendanceSessions: AttendanceSessionSummary[] = [
     date: "2026-05-03",
     duration: 60,
     present: 36,
-    absent: 4,
-    late: 2,
+    absent: 6,
+    late: 0,
     excused: 0,
     total: 42
   },
@@ -57,9 +73,9 @@ let attendanceSessions: AttendanceSessionSummary[] = [
     date: "2026-05-02",
     duration: 60,
     present: 34,
-    absent: 2,
-    late: 1,
-    excused: 1,
+    absent: 4,
+    late: 0,
+    excused: 0,
     total: 38
   }
 ];
@@ -97,7 +113,9 @@ let materials: CourseMaterialData[] = [
     fileName: "graph-algorithms.txt",
     fileSize: 1840,
     uploadedAt: "2026-05-01",
-    contentPreview: "BFS explores neighbors level by level. DFS explores deeply before backtracking."
+    contentPreview: "BFS explores neighbors level by level. DFS explores deeply before backtracking.",
+    content:
+      "Graph Algorithms Primer. Breadth-first search explores neighbors level by level and is used for shortest paths in unweighted graphs. Depth-first search explores deeply before backtracking and is useful for cycle detection, connected components, and topological sorting. Dijkstra's algorithm finds shortest paths in weighted graphs with non-negative edges. Minimum spanning tree algorithms such as Kruskal and Prim connect all vertices with minimum total edge weight."
   }
 ];
 
@@ -154,8 +172,22 @@ export function getFacultySubjects() {
 }
 
 export function getFacultyRoster(subjectId: string) {
-  const subject = facultySubjects.find((item) => item.subjectId === subjectId);
-  return subject ? roster : [];
+  return rosterBySubject[subjectId] ?? [];
+}
+
+export function getFacultyProfile() {
+  return {
+    employeeId: "E16783",
+    name: "Dr. Nisha Rao",
+    department: "Computer Science Engineering",
+    designation: "Associate Professor",
+    email: "nisha.rao@campusiq.edu",
+    mobile: "9876543210",
+    office: "Block B, Faculty Room 204",
+    weeklyHours: 18,
+    subjects: facultySubjects.map(({ subject, code, enrolledStudents }) => ({ subject, code, enrolledStudents })),
+    qualifications: ["Ph.D. Computer Science", "M.Tech Artificial Intelligence", "B.Tech CSE"]
+  };
 }
 
 export function getFacultySchedule() {
@@ -175,16 +207,17 @@ export function createAttendanceSession(input: {
   const subject = facultySubjects.find((item) => item.subjectId === input.subjectId) ?? facultySubjects[0];
   const count = (status: AttendanceMark["status"]) =>
     input.marks.filter((mark) => mark.status === status).length;
+  const present = count("PRESENT");
   const session: AttendanceSessionSummary = {
     id: `sess-${Date.now()}`,
     subjectId: subject.subjectId,
     subject: subject.subject,
     date: input.date,
     duration: input.duration,
-    present: count("PRESENT"),
-    absent: count("ABSENT"),
-    late: count("LATE"),
-    excused: count("EXCUSED"),
+    present,
+    absent: input.marks.length - present,
+    late: 0,
+    excused: 0,
     total: input.marks.length
   };
 
@@ -262,7 +295,7 @@ export function createMaterial(input: {
   fileSize: number;
   content: string;
 }) {
-  const subject = facultySubjects.find((item) => item.subjectId === input.subjectId) ?? facultySubjects[0];
+  const subject = subjectCatalog.find((item) => item.subjectId === input.subjectId) ?? subjectCatalog[0];
   const material: CourseMaterialData = {
     id: `mat-${Date.now()}`,
     subjectId: subject.subjectId,
@@ -271,7 +304,8 @@ export function createMaterial(input: {
     fileName: input.fileName,
     fileSize: input.fileSize,
     uploadedAt: new Date().toISOString().slice(0, 10),
-    contentPreview: input.content.slice(0, 160)
+    contentPreview: input.content.slice(0, 220),
+    content: input.content
   };
 
   materials = [material, ...materials];

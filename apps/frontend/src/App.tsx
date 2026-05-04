@@ -5,6 +5,7 @@ import { AdminLayout } from "./layouts/AdminLayout";
 import { FacultyLayout } from "./layouts/FacultyLayout";
 import { StudentLayout } from "./layouts/StudentLayout";
 import { Login } from "./pages/auth/Login";
+import { RoleLanding } from "./pages/auth/RoleLanding";
 import { AdminAttendanceAnalytics } from "./pages/admin/AttendanceAnalytics";
 import { AdminDashboard } from "./pages/admin/Dashboard";
 import { AdminDepartments } from "./pages/admin/Departments";
@@ -15,11 +16,15 @@ import { FacultyAttendance } from "./pages/faculty/Attendance";
 import { FacultyDashboard } from "./pages/faculty/Dashboard";
 import { FacultyLeave } from "./pages/faculty/Leave";
 import { FacultyMaterials } from "./pages/faculty/Materials";
+import { FacultyProfile } from "./pages/faculty/Profile";
 import { FacultySchedule } from "./pages/faculty/Schedule";
 import { StudentAttendance } from "./pages/student/Attendance";
 import { StudentAiAgent } from "./pages/student/AiAgent";
 import { StudentDashboard } from "./pages/student/Dashboard";
+import { StudentOnlineTest } from "./pages/student/OnlineTest";
+import { StudentProfile } from "./pages/student/Profile";
 import { StudentSchedule } from "./pages/student/Schedule";
+import { StudentServices } from "./pages/student/Services";
 
 export default function App() {
   const location = useLocation();
@@ -27,7 +32,7 @@ export default function App() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<RoleLanding />} />
         <Route path="/login" element={<Login />} />
 
         <Route
@@ -43,6 +48,9 @@ export default function App() {
           <Route path="attendance" element={<StudentAttendance />} />
           <Route path="schedule" element={<StudentSchedule />} />
           <Route path="ai-agent" element={<StudentAiAgent />} />
+          <Route path="services" element={<StudentServices />} />
+          <Route path="online-test" element={<StudentOnlineTest />} />
+          <Route path="profile" element={<StudentProfile />} />
         </Route>
 
         <Route
@@ -59,6 +67,7 @@ export default function App() {
           <Route path="schedule" element={<FacultySchedule />} />
           <Route path="leave" element={<FacultyLeave />} />
           <Route path="materials" element={<FacultyMaterials />} />
+          <Route path="profile" element={<FacultyProfile />} />
         </Route>
 
         <Route
@@ -78,7 +87,7 @@ export default function App() {
           <Route path="departments" element={<AdminDepartments />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>
   );

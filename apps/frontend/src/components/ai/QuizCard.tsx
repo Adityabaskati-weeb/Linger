@@ -54,7 +54,7 @@ function parseQuiz(content: string) {
 
   const question = parts[0].trim();
   const optionsRaw = `A) ${parts[1]}`;
-  const optionMatches = [...optionsRaw.matchAll(/([A-D])\)\s*([^A-D]+?)(?=\s+[A-D]\)|\s+ANSWER:|$)/g)];
+  const optionMatches = [...optionsRaw.matchAll(/([A-D])\)\s*([\s\S]*?)(?=\s+[A-D]\)|\s+ANSWER:|$)/g)];
 
   return {
     question,

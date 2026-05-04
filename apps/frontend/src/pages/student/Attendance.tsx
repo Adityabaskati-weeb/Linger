@@ -27,8 +27,9 @@ export function StudentAttendance() {
   }, [subjectId]);
 
   const csv = useMemo(() => {
-    const rows = [["Date", "Subject", "Status", "Faculty"]];
-    records.forEach((record) => rows.push([record.date, record.subject, record.status, record.faculty]));
+    const generatedDate = new Date().toISOString().slice(0, 10);
+    const rows = [["Export Date", "Attendance Date", "Subject", "Status", "Faculty"]];
+    records.forEach((record) => rows.push([generatedDate, record.date, record.subject, record.status, record.faculty]));
     return rows.map((row) => row.map((cell) => `"${cell}"`).join(",")).join("\n");
   }, [records]);
 
@@ -36,7 +37,7 @@ export function StudentAttendance() {
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = "campusiq-attendance.csv";
+    link.download = `campusiq-attendance-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   }

@@ -46,6 +46,7 @@ export function AdminAttendanceAnalytics() {
               <tr>
                 <th className="p-4">Student</th>
                 <th className="p-4">Roll No</th>
+                <th className="p-4">Sub Code</th>
                 <th className="p-4">Subject</th>
                 <th className="p-4">Current</th>
                 <th className="p-4">Needed</th>
@@ -56,6 +57,7 @@ export function AdminAttendanceAnalytics() {
                 <tr key={student.id} className="border-t border-white/[0.06]">
                   <td className="p-4 text-white">{student.name}</td>
                   <td className="p-4 font-mono text-slate-400">{student.rollNumber}</td>
+                  <td className="p-4 font-mono text-cyan">{student.subjectCode}</td>
                   <td className="p-4 text-slate-300">{student.subject}</td>
                   <td className="p-4 text-red-200">{student.attendancePercentage}%</td>
                   <td className="p-4 text-amber-200">{student.classesNeededFor75}</td>

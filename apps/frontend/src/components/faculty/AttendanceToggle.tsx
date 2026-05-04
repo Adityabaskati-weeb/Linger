@@ -6,11 +6,11 @@ interface AttendanceToggleProps {
   onChange: (value: AttendanceStatus) => void;
 }
 
-const statuses: AttendanceStatus[] = ["PRESENT", "ABSENT", "LATE", "EXCUSED"];
+const statuses: AttendanceStatus[] = ["PRESENT", "ABSENT"];
 
 export function AttendanceToggle({ value, onChange }: AttendanceToggleProps) {
   return (
-    <div className="grid grid-cols-4 overflow-hidden rounded-md border border-white/10 bg-white/[0.04]">
+    <div className="grid grid-cols-2 overflow-hidden rounded-md border border-white/10 bg-white/[0.04]">
       {statuses.map((status) => (
         <button
           key={status}

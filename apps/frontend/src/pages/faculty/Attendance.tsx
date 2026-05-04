@@ -37,9 +37,7 @@ export function FacultyAttendance() {
     const values = Object.values(marks);
     return {
       present: values.filter((status) => status === "PRESENT").length,
-      absent: values.filter((status) => status === "ABSENT").length,
-      late: values.filter((status) => status === "LATE").length,
-      excused: values.filter((status) => status === "EXCUSED").length
+      absent: values.filter((status) => status === "ABSENT").length
     };
   }, [marks]);
 
@@ -81,7 +79,7 @@ export function FacultyAttendance() {
             >
               {subjects.map((subject) => (
                 <option key={subject.subjectId} value={subject.subjectId}>
-                  {subject.subject}
+                  {subject.code} - {subject.subject}
                 </option>
               ))}
             </select>
@@ -110,7 +108,7 @@ export function FacultyAttendance() {
           <div>
             <h2 className="font-display text-2xl font-semibold">Student Roster</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Present {summary.present}, absent {summary.absent}, late {summary.late}, excused {summary.excused}
+              Present {summary.present}, absent {summary.absent}. Roster changes by subject code and elective enrollment.
             </p>
           </div>
           <Button onClick={submit}>
