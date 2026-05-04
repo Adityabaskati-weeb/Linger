@@ -11,6 +11,7 @@ import type {
   RosterStudent,
   TimetableSlot
 } from "@campusiq/shared";
+import { readTable, writeTable } from "./localDatabase";
 
 const subjectCatalog: FacultySubject[] = [
   { subjectId: "sub-dsa", subject: "Data Structures", code: "CS301", enrolledStudents: 42 },
@@ -53,7 +54,7 @@ const schedule: TimetableSlot[] = [
   slot("fac-tt-6", "FRIDAY", "09:00", "10:00", facultySubjects[1], "AI Lab", "#3B82F6")
 ];
 
-let attendanceSessions: AttendanceSessionSummary[] = [
+const defaultAttendanceSessions: AttendanceSessionSummary[] = [
   {
     id: "sess-1",
     subjectId: "sub-dsa",
@@ -80,7 +81,7 @@ let attendanceSessions: AttendanceSessionSummary[] = [
   }
 ];
 
-let leaveRequests: LeaveRequestData[] = [
+const defaultLeaveRequests: LeaveRequestData[] = [
   {
     id: "leave-1",
     type: "CASUAL",
@@ -104,7 +105,7 @@ let leaveRequests: LeaveRequestData[] = [
   }
 ];
 
-let materials: CourseMaterialData[] = [
+const defaultMaterials: CourseMaterialData[] = [
   {
     id: "mat-1",
     subjectId: "sub-dsa",
@@ -118,6 +119,10 @@ let materials: CourseMaterialData[] = [
       "Graph Algorithms Primer. Breadth-first search explores neighbors level by level and is used for shortest paths in unweighted graphs. Depth-first search explores deeply before backtracking and is useful for cycle detection, connected components, and topological sorting. Dijkstra's algorithm finds shortest paths in weighted graphs with non-negative edges. Minimum spanning tree algorithms such as Kruskal and Prim connect all vertices with minimum total edge weight."
   }
 ];
+
+let attendanceSessions = readTable<AttendanceSessionSummary[]>("facultyAttendanceSessions", defaultAttendanceSessions);
+let leaveRequests = readTable<LeaveRequestData[]>("facultyLeaveRequests", defaultLeaveRequests);
+let materials = readTable<CourseMaterialData[]>("courseMaterials", defaultMaterials);
 
 function slot(
   id: string,
@@ -222,6 +227,7 @@ export function createAttendanceSession(input: {
   };
 
   attendanceSessions = [session, ...attendanceSessions];
+  writeTable("facultyAttendanceSessions", attendanceSessions);
   return session;
 }
 
@@ -247,6 +253,7 @@ export function createLeaveRequest(input: {
   };
 
   leaveRequests = [request, ...leaveRequests];
+  writeTable("facultyLeaveRequests", leaveRequests);
   return request;
 }
 
@@ -258,6 +265,7 @@ export function cancelLeaveRequest(id: string) {
   }
 
   leaveRequests = leaveRequests.filter((item) => item.id !== id);
+  writeTable("facultyLeaveRequests", leaveRequests);
   return true;
 }
 
@@ -270,6 +278,7 @@ export function updateLeaveRequest(id: string, status: Exclude<LeaveStatus, "PEN
 
   request.status = status;
   request.adminNote = adminNote;
+  writeTable("facultyLeaveRequests", leaveRequests);
   return request;
 }
 
@@ -285,6 +294,7 @@ export function deleteMaterial(id: string) {
   }
 
   materials = materials.filter((material) => material.id !== id);
+  writeTable("courseMaterials", materials);
   return true;
 }
 
@@ -309,5 +319,6 @@ export function createMaterial(input: {
   };
 
   materials = [material, ...materials];
+  writeTable("courseMaterials", materials);
   return material;
 }

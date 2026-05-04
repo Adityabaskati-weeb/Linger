@@ -11,6 +11,7 @@ import type {
 } from "@campusiq/shared";
 import { getAnnouncements } from "./announcementData";
 import { getLeaveRequests } from "./facultyData";
+import { readTable, writeTable } from "./localDatabase";
 import { getStudentAttendanceSummary } from "./studentData";
 
 const trends: AttendanceTrendPoint[] = [
@@ -33,7 +34,7 @@ const departmentAttendance: DepartmentAttendancePoint[] = [
   { department: "CE", current: 83, previous: 80 }
 ];
 
-let facultyProductivity: FacultyProductivityRow[] = [
+const defaultFacultyProductivity: FacultyProductivityRow[] = [
   {
     id: "fac-1",
     name: "Dr. Nisha Rao",
@@ -69,13 +70,16 @@ let facultyProductivity: FacultyProductivityRow[] = [
   }
 ];
 
-let studentOverview: StudentOverviewRow[] = [
+const defaultStudentOverview: StudentOverviewRow[] = [
   { id: "stu-1", name: "Telheiba", rollNumber: "CS26-112", department: "CS", semester: 6, overall: 79 },
   { id: "stu-2", name: "Isha Kapoor", rollNumber: "CS25-052", department: "CS", semester: 5, overall: 88 },
   { id: "stu-3", name: "Kabir Sethi", rollNumber: "CS25-058", department: "CS", semester: 5, overall: 73 },
   { id: "stu-4", name: "Naina Roy", rollNumber: "CS25-063", department: "CS", semester: 5, overall: 91 },
   { id: "stu-5", name: "Tara Joshi", rollNumber: "CS25-074", department: "CS", semester: 5, overall: 84 }
 ];
+
+let facultyProductivity = readTable<FacultyProductivityRow[]>("facultyProductivity", defaultFacultyProductivity);
+let studentOverview = readTable<StudentOverviewRow[]>("studentOverview", defaultStudentOverview);
 
 const atRiskStudents: AtRiskStudentRow[] = getStudentAttendanceSummary()
   .filter((summary) => summary.attendancePercentage < 75)
@@ -262,12 +266,14 @@ export function createFaculty(input: { name: string; department: string; employe
   };
 
   facultyProductivity = [faculty, ...facultyProductivity];
+  writeTable("facultyProductivity", facultyProductivity);
   return faculty;
 }
 
 export function removeFaculty(id: string) {
   const exists = facultyProductivity.some((faculty) => faculty.id === id);
   facultyProductivity = facultyProductivity.filter((faculty) => faculty.id !== id);
+  writeTable("facultyProductivity", facultyProductivity);
   return exists;
 }
 
@@ -292,12 +298,14 @@ export function createStudent(input: {
   };
 
   studentOverview = [student, ...studentOverview];
+  writeTable("studentOverview", studentOverview);
   return student;
 }
 
 export function removeStudent(id: string) {
   const exists = studentOverview.some((student) => student.id === id);
   studentOverview = studentOverview.filter((student) => student.id !== id);
+  writeTable("studentOverview", studentOverview);
   return exists;
 }
 

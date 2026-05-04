@@ -116,7 +116,15 @@ sequenceDiagram
 
 ## Data Status
 
-CampusIQ currently runs as a strong local demo using seeded in-memory TypeScript data. The Prisma schema for PostgreSQL already exists in `apps/backend/prisma/schema.prisma`, so Supabase, Neon, or local Postgres can be connected later by adding `DATABASE_URL` in `apps/backend/.env`.
+CampusIQ now uses a local persistent JSON database for hackathon-safe demo data. The backend creates `apps/backend/data/campusiq.local.json` automatically, so created announcements, uploaded materials, attendance sessions, student leave/NOC/project submissions, and admin add/remove actions can survive server restarts.
+
+Check database status here:
+
+```text
+http://localhost:4000/api/database
+```
+
+The Prisma schema for PostgreSQL still exists in `apps/backend/prisma/schema.prisma`, so Supabase, Neon, or local Postgres can replace the local JSON adapter later by adding `DATABASE_URL` and wiring the services to Prisma.
 
 This means the demo works immediately without a hosted database bill, while still having a real migration path for production persistence.
 
@@ -144,6 +152,7 @@ Useful URLs:
 | --- | --- |
 | Frontend | `http://localhost:5173` |
 | Backend API | `http://localhost:4000/api` |
+| Database Status | `http://localhost:4000/api/database` |
 | Health Check | `http://localhost:4000/health` |
 
 ## Optional Environment
@@ -161,6 +170,12 @@ CLIENT_URL="http://localhost:5173"
 ```
 
 Without these values, the demo still works through local seeded data and AI fallback.
+
+Optional local database override:
+
+```bash
+LOCAL_DB_PATH="./data/campusiq.local.json"
+```
 
 ## Judge Demo Path
 

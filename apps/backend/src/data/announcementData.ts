@@ -1,6 +1,7 @@
 import type { AnnouncementData } from "@campusiq/shared";
+import { readTable, writeTable } from "./localDatabase";
 
-let announcements: AnnouncementData[] = [
+const defaultAnnouncements: AnnouncementData[] = [
   {
     id: "ann-1",
     title: "Boost your self-esteem and confidence during exams",
@@ -31,6 +32,8 @@ let announcements: AnnouncementData[] = [
   }
 ];
 
+let announcements = readTable<AnnouncementData[]>("announcements", defaultAnnouncements);
+
 export function getAnnouncements(audience?: AnnouncementData["audience"]) {
   return announcements.filter((announcement) => {
     if (!audience) return true;
@@ -57,5 +60,6 @@ export function createAnnouncement(input: {
   };
 
   announcements = [announcement, ...announcements];
+  writeTable("announcements", announcements);
   return announcement;
 }

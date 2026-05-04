@@ -7,6 +7,7 @@ import type {
 } from "@campusiq/shared";
 import { getAnnouncements } from "./announcementData";
 import { getMaterials } from "./facultyData";
+import { readTable, writeTable } from "./localDatabase";
 
 const profile: StudentProfileData = {
   uid: "23BCS14721",
@@ -54,7 +55,7 @@ const profile: StudentProfileData = {
   }
 };
 
-let projectUploads: StudentPortalData["project"]["uploads"] = [
+const defaultProjectUploads: StudentPortalData["project"]["uploads"] = [
   {
     id: "proj-up-1",
     title: "Sprint 1 Proposal",
@@ -64,11 +65,11 @@ let projectUploads: StudentPortalData["project"]["uploads"] = [
   }
 ];
 
-let nocApplications: NocApplicationData[] = [
+const defaultNocApplications: NocApplicationData[] = [
   { id: "noc-1", type: "Direct only Internship", status: "APPROVED", appliedAt: "2026-04-18" }
 ];
 
-let leaveHistory: StudentLeaveData[] = [
+const defaultLeaveHistory: StudentLeaveData[] = [
   {
     id: "med-1",
     fromDate: "2026-04-12",
@@ -85,6 +86,10 @@ let leaveHistory: StudentLeaveData[] = [
     status: "PENDING"
   }
 ];
+
+let projectUploads = readTable<StudentPortalData["project"]["uploads"]>("studentProjectUploads", defaultProjectUploads);
+let nocApplications = readTable<NocApplicationData[]>("studentNocApplications", defaultNocApplications);
+let leaveHistory = readTable<StudentLeaveData[]>("studentLeaveHistory", defaultLeaveHistory);
 
 export function getStudentProfile() {
   return profile;
@@ -262,6 +267,7 @@ export function createProjectUpload(input: { title: string; fileName: string; ty
   };
 
   projectUploads = [upload, ...projectUploads];
+  writeTable("studentProjectUploads", projectUploads);
   return upload;
 }
 
@@ -274,6 +280,7 @@ export function createNocApplication(input: { type: NocApplicationData["type"] }
   };
 
   nocApplications = [application, ...nocApplications];
+  writeTable("studentNocApplications", nocApplications);
   return application;
 }
 
@@ -293,5 +300,6 @@ export function createStudentLeave(input: {
   };
 
   leaveHistory = [leave, ...leaveHistory];
+  writeTable("studentLeaveHistory", leaveHistory);
   return leave;
 }

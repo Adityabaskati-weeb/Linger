@@ -11,6 +11,7 @@ import { aiRouter } from "./routes/ai.routes";
 import { facultyRouter } from "./routes/faculty.routes";
 import { studentRouter } from "./routes/student.routes";
 import { timetableRouter } from "./routes/timetable.routes";
+import { databaseInfo } from "./data/localDatabase";
 
 dotenv.config();
 
@@ -32,7 +33,7 @@ app.get("/health", (_req, res) => {
     data: {
       service: "campusiq-api",
       status: "ok",
-      phase: "foundation"
+      database: databaseInfo()
     }
   });
 });
@@ -42,8 +43,16 @@ app.get("/api", (_req, res) => {
     success: true,
     data: {
       name: "CampusIQ API",
-      version: "0.1.0"
+      version: "0.1.0",
+      database: databaseInfo()
     }
+  });
+});
+
+app.get("/api/database", (_req, res) => {
+  res.json({
+    success: true,
+    data: databaseInfo()
   });
 });
 
